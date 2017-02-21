@@ -1,8 +1,13 @@
 var express = require('express');
 var router = express.Router();
 var request = require('request');
+var rssReader = require("feed-read");
 
 var config = require('../config');
+
+var Globals = {
+	GOOGLE_NEWS_ENDPOINT : 'https://news.google.com/news?output=rss'
+}
 
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
@@ -71,7 +76,9 @@ function receivedMessage(event) {
 	        	break;
 
         	default:
-        		sendTextMessage(senderID, messageText);
+        		getArticle(function(err, articles) {
+        			sendTextMessage(senderID, articles[0]);
+        		});
     	}
 	}
 	else if(messageAttachments) {
@@ -83,13 +90,23 @@ function sendGenericMessage(recipientId, messageText) {
   // To be expanded in later sections
 }
 
-function sendTextMessage(recipientId, messageText) {
+function sendTextMessage(recipientId, message) {
   var messageData = {
     recipient: {
       id: recipientId
     },
     message: {
-      text: messageText
+      	attachment: {
+      		type : "template",
+      		payload : {
+      			template_type : "generic",
+      			elements : [{
+      				title : message.title,
+      				subtitle : message.published.toString(),
+      				item_url : message.link
+      			}]
+      		}
+      	}
     }
   };
 
@@ -117,6 +134,22 @@ function callSendAPI(messageData) {
 	      console.error(error);
 	    }
     });  
+}
+
+function getArticle(callback) {
+	rssReader(Globals.GOOGLE_NEWS_ENDPOINT, function(err, articles) {
+		if(err) {
+			callback(err);
+		}
+		else {
+			if(articles.length > 0) {
+				callback(null, articles);
+			}
+			else {
+				callback('no articles');
+			}
+		}
+	});
 }
   
 module.exports = router;
