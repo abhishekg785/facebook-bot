@@ -1,9 +1,9 @@
 var express = require('express');
 var router = express.Router();
+var request = require('request');
 
 var config = require('../config');
 
-/* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
@@ -52,7 +52,71 @@ router.post('/webhook', function (req, res) {
 });
   
 function receivedMessage(event) {
-	console.log(event);
+	var senderID = event.sender.id,
+		recipientID = event.recipient.id,
+		timeOfMessage = event.timestamp,
+		message = event.message;
+
+	// info in the message object
+	console.log(JSON.stringify(message));
+	var messageID = message.mid,
+		messageText = message.text,
+		messageAttachments = message.attachments;
+	if(messageText) {
+	// If we receive a text message, check to see if it matches a keyword
+    // and send back the example. Otherwise, just echo the text we received.
+    	switch(messageText) {
+    		case 'generic':
+	    		sendGenericMessage(senderID);
+	        	break;
+
+        	default:
+        		sendTextMessage(senderID, messageText);
+    	}
+	}
+	else if(messageAttachments) {
+		sendTextMessage(senderID, "Attachments here");
+	}
+}
+
+function sendGenericMessage(recipientId, messageText) {
+  // To be expanded in later sections
+}
+
+function sendTextMessage(recipientId, messageText) {
+  var messageData = {
+    recipient: {
+      id: recipientId
+    },
+    message: {
+      text: messageText
+    }
+  };
+
+  callSendAPI(messageData);
+}
+
+function callSendAPI(messageData) {
+  request(
+  	{
+	    uri: 'https://graph.facebook.com/v2.6/me/messages',
+	    qs: { access_token: config.PAGE_ACCESS_TOKEN },
+	    method: 'POST',
+	    json: messageData
+	}, 
+	function (error, response, body) {
+	    if (!error && response.statusCode == 200) {
+	      var recipientId = body.recipient_id;
+	      var messageId = body.message_id;
+
+	      console.log("Successfully sent generic message with id %s to recipient %s", 
+	        messageId, recipientId);
+	    } else {
+	      console.error("Unable to send message.");
+	      console.error(response);
+	      console.error(error);
+	    }
+    });  
 }
   
 module.exports = router;
