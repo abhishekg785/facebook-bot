@@ -5,5 +5,5 @@ var apiController = require('../controller/api');
 
 router.get('/', apiController.tokenVerification);
 router.post('/', apiController.messageHandler);
-  
+
 module.exports = router;
