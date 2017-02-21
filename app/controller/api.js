@@ -1,19 +1,10 @@
-var express = require('express');
-var router = express.Router();
 var request = require('request');
 var rssReader = require("feed-read");
 
-var config = require('../config');
+var config = require('../config/config');
+var properties = require('../config/properties');
 
-var Globals = {
-	GOOGLE_NEWS_ENDPOINT : 'https://news.google.com/news?output=rss'
-}
-
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
-});
-
-router.get('/webhook', function(req, res) {
+exports.tokenVerification = function (req, res) {
 	if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === config.VERIFY_TOKEN) 
 	{
 	    console.log("Validating webhook");
@@ -24,9 +15,9 @@ router.get('/webhook', function(req, res) {
 	    console.error("Failed validation. Make sure the validation tokens match.");
 	    res.sendStatus(403);
 	}  
-});
+}
 
-router.post('/webhook', function (req, res) {
+exports.messageHandler = function(req, res) {
   var data = req.body;
 
   // Make sure this is a page subscription
@@ -54,8 +45,8 @@ router.post('/webhook', function (req, res) {
     // will time out and we will keep trying to resend.
     res.sendStatus(200);
   }
-});
-  
+}
+
 function receivedMessage(event) {
 	var senderID = event.sender.id,
 		recipientID = event.recipient.id,
@@ -137,7 +128,7 @@ function callSendAPI(messageData) {
 }
 
 function getArticle(callback) {
-	rssReader(Globals.GOOGLE_NEWS_ENDPOINT, function(err, articles) {
+	rssReader(properties.GOOGLE_NEWS_ENDPOINT, function(err, articles) {
 		if(err) {
 			callback(err);
 		}
@@ -151,5 +142,3 @@ function getArticle(callback) {
 		}
 	});
 }
-  
-module.exports = router;
