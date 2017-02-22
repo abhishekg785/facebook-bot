@@ -20,6 +20,7 @@ exports.tokenVerification = function (req, res) {
 }
 
 exports.messageHandler = function(req, res) {
+    console.log('in the post route');
     var data = req.body;
 
     // Make sure this is a page subscription
@@ -50,6 +51,7 @@ exports.messageHandler = function(req, res) {
 }
 
 function receivedMessage(event) {
+    console.log('in the received message function');
     var senderID = event.sender.id,
         recipientID = event.recipient.id,
         timeOfMessage = event.timestamp,
@@ -69,6 +71,7 @@ function receivedMessage(event) {
                 console.log(err);
             }
             else{
+                console.log(articles);
                 switch(normalizedText) {
                     case 'showmore' :
                         var maxArticles = Math.min(articles.length, 5);
@@ -78,6 +81,9 @@ function receivedMessage(event) {
                         break;
                     case '/subscribe' :
                         subscribeUser(senderID);
+                        break;
+                    case '/unsubscribe' :
+                        unSubscibeUser(senderID);
                         break;
                     default:
                         sendArticleMessage(senderID, articles[0]);
@@ -179,3 +185,17 @@ function subscribeUser(id) {
         }
     });
 }
+
+function unSubscibeUser(id) {
+    UserModel.findOneAndRemove({ fb_id : id}, function(err, user) {
+        if(err) {
+            sendTextMessage(id, 'There was an error for unsubscribing you for daily notifications !');
+        }
+        else {
+            sendTextMessage(id, 'You have been unsubscribed!');
+        }
+    });
+}
+
+exports.sendArticleMessage = sendArticleMessage;
+exports.getArticle = getArticle;

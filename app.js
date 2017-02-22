@@ -4,10 +4,13 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var nodeSchedule = require('node-schedule');
 
 var routes = require('./app/routes/index');
 var webhook = require('./app/routes/webhook');
 var mongoose = require('mongoose');
+var UserModel = require('./app/models/User');
+var apiController = require('./app/controller/api');
 
 var app = express();
 
@@ -24,6 +27,20 @@ mongoose.connect('mongodb://localhost/aaron-bot', function(err) {
     else{
         console.log(err);
     }
+});
+
+// schedule the event for each morning using node scheduler
+// 10 am every morning to send the update
+var j = nodeSchedule.scheduleJob('11 * * * *', function() {
+    UserModel.find({}, function(err, users) {
+        if(users != null) {
+            apiController.getArticle(function(err, articles) {
+                users.forEach(function(user) {
+                    apiController.sendArticleMessage(user.fb_id, articles[0]);
+                });
+            });
+        }
+    });
 });
 
 // uncomment after placing your favicon in /public
