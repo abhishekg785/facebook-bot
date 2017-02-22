@@ -4,6 +4,8 @@ var rssReader = require("feed-read");
 var config = require('../config/config');
 var properties = require('../config/properties');
 
+var UserModel = require('../models/User');
+
 exports.tokenVerification = function (req, res) {
     if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === config.VERIFY_TOKEN)
     {
@@ -71,26 +73,38 @@ function receivedMessage(event) {
                     case 'showmore' :
                         var maxArticles = Math.min(articles.length, 5);
                         for(var i = 0; i < maxArticles; i++) {
-                            sendTextMessage(senderID, articles[i]);
+                            sendArticleMessage(senderID, articles[i]);
                         }
                         break;
+                    case '/subscribe' :
+                        subscribeUser(senderID);
+                        break;
                     default:
-                        sendTextMessage(senderID, articles[0]);
+                        sendArticleMessage(senderID, articles[0]);
                         break;
                 }
             }
         });
     }
     else if(messageAttachments) {
-        sendTextMessage(senderID, "Attachments here");
+        sendArticleMessage(senderID, "Attachments here");
     }
 }
 
-function sendGenericMessage(recipientId, messageText) {
-    // To be expanded in later sections
+function sendTextMessage(recipientId, messageText) {
+    var messageText = {
+        recipient : {
+            id: recipientId
+        },
+        message : {
+            text : messageText
+        }
+    }
+
+    callSendAPI(messageText);
 }
 
-function sendTextMessage(recipientId, message) {
+function sendArticleMessage(recipientId, message) {
     var messageData = {
         recipient: {
             id: recipientId
@@ -148,6 +162,20 @@ function getArticle(callback) {
             else {
                 callback('no articles');
             }
+        }
+    });
+}
+
+function subscribeUser(id) {
+    var newUser = new UserModel({
+        fb_id : id,
+    });
+    UserModel.findOneAndUpdate({fb_id : id}, {fb_id : id}, {upsert : true}, function(err, user) {
+        if(err) {
+            sendTextMessage(newUser.fb_id, 'There was an error for subscribing you for daily notifications !');
+        }
+        else {
+            sendTextMessage(newUser.fb_id, 'You have been subscribed!');
         }
     });
 }

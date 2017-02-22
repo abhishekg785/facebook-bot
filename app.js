@@ -17,7 +17,7 @@ app.engine('html',require('ejs').renderFile);
 app.set('view engine', 'html');
 
 // mongodb connect using mongoose
-mongoose.connect('mongodb://localhost', function(err) {
+mongoose.connect('mongodb://localhost/aaron-bot', function(err) {
     if(!err) {
         console.log('connected to db');
     }
