@@ -31,7 +31,7 @@ mongoose.connect('mongodb://localhost/aaron-bot', function(err) {
 
 // schedule the event for each morning using node scheduler
 // 10 am every morning to send the update
-var j = nodeSchedule.scheduleJob('11 * * * *', function() {
+var j = nodeSchedule.scheduleJob('0 9 * * *', function() {
     UserModel.find({}, function(err, users) {
         if(users != null) {
             apiController.getArticle(function(err, articles) {

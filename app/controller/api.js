@@ -71,14 +71,14 @@ function receivedMessage(event) {
                 console.log(err);
             }
             else{
-                console.log(articles);
+                // console.log(articles);
                 switch(normalizedText) {
-                    case 'showmore' :
-                        var maxArticles = Math.min(articles.length, 5);
-                        for(var i = 0; i < maxArticles; i++) {
-                            sendArticleMessage(senderID, articles[i]);
-                        }
-                        break;
+                    // case 'showmore' :
+                    //     var maxArticles = Math.min(articles.length, 5);
+                    //     for(var i = 0; i < maxArticles; i++) {
+                    //         sendArticleMessage(senderID, articles[i]);
+                    //     }
+                    //     break;
                     case '/subscribe' :
                         subscribeUser(senderID);
                         break;
@@ -86,7 +86,10 @@ function receivedMessage(event) {
                         unSubscibeUser(senderID);
                         break;
                     default:
-                        sendArticleMessage(senderID, articles[0]);
+                        // sendArticleMessage(senderID, articles[0]);
+                        callWitAI(normalizedText, function(err, intent) {
+                            handleIntent(intent);
+                        });
                         break;
                 }
             }
@@ -195,6 +198,38 @@ function unSubscibeUser(id) {
             sendTextMessage(id, 'You have been unsubscribed!');
         }
     });
+}
+
+function callWitAI(query, callback) {
+    query = encodeURIComponent(query);
+    request({
+        uri : properties.WIT_API_ENDPOINT + query,
+        qs : {
+            access_token : config.WIT_AI_ACCESS_TOKEN
+        },
+        method : 'GET'
+    }, function(err, response, body) {
+        if(!err && response.statusCode == 200) {
+            console.log('successfully got %s', response.body);
+            try {
+                body = JSON.parse(response.body);
+                intent = body['entities']['intent'][0]['value']
+                callback(null, intent)
+            }
+            catch(e){
+                callback(e);
+            }
+        }
+        else {
+            console.log(response.statusCode);
+            console.error('Unable to send message %s' + err);
+            callback(err);
+        }
+    });
+}
+
+function handleIntent(intent) {
+    console.log(intent);
 }
 
 exports.sendArticleMessage = sendArticleMessage;
