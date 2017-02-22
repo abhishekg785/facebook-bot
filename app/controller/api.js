@@ -88,7 +88,7 @@ function receivedMessage(event) {
                     default:
                         // sendArticleMessage(senderID, articles[0]);
                         callWitAI(normalizedText, function(err, intent) {
-                            handleIntent(intent);
+                            handleIntent(intent, senderID);
                         });
                         break;
                 }
@@ -228,8 +228,61 @@ function callWitAI(query, callback) {
     });
 }
 
-function handleIntent(intent) {
+function handleIntent(intent, sender) {
     console.log(intent);
+    switch(intent) {
+        case "jokes" :
+            sendTextMessage(sender, "When I see lovers' names carved in a tree, I don't think it's sweet. I just think it's surprising how many people bring a knife on a date.");
+            break;
+        case "status":
+            sendTextMessage(sender, 'I am great as always :) ');
+            break;
+        case "greeting":
+            sendTextMessage(sender, "Yo!");
+            break;
+        case "identification":
+            sendTextMessage(sender, "I am Gosu! A smart Bot :) ");
+            break;
+        case "more news":
+            getArticle(function(err, articles) {
+                if(err) {
+                    console.log(err);
+                }
+                else {
+                    sendTextMessage(sender, "How about these ");
+                    maxArticles = Math.min(articles.length, 5);
+                    for(var i = 0 ; i < maxArticles; i++) {
+                        sendArticleMessage(sender, articles[i]);
+                    }
+                }
+            });
+            break;
+        case "general news" :
+            getArticle(function(err, articles) {
+                if(err) {
+                    console.log(err);
+                }
+                else {
+                    sendTextMessage(sender, 'Here is what i have found :)');
+                    sendArticleMessage(sender, articles[0]);
+                }
+            });
+            break;
+        case "local news":
+            getArticle(function(err, articles) {
+                if(err) {
+                    console.log(err);
+                }
+                else {
+                    sendTextMessage(sender, "Here is something i have found!");
+                    sendArticleMessage(sender, articles[0]);
+                }
+            });
+            break;
+        default:
+            sendTextMessage(sender, "Sorry i did not understand this one :P");
+            break;
+    }
 }
 
 exports.sendArticleMessage = sendArticleMessage;
